@@ -32,34 +32,22 @@ screen.fill([74,117,44])
 pygame.display.set_caption("Minesweeper")
 clock = pygame.time.Clock()
 
-mine_placing_list = [['mine','NoFlag']]*tm+[[0,'NoFlag']]*(wp*hp-tm)
+#Building grid
+mine_placing_list = [['','NoFlag']]*tm+[0]*(wp*hp-tm)
 random.shuffle(mine_placing_list)
-b = [(0,None)] # boundary
-outer_grid = [b*(wp+2)]+[b+mine_placing_list[i*wp:(i+1)*wp]+b for i in range(hp)]+[b*(wp+2)]
+outer_grid = [[0]*(wp+2)]+[[0]+mine_placing_list[i*wp:(i+1)*wp]+[0] for i in range(hp)]+[[0]*(wp+2)]
 inner_grid = [mine_placing_list[i*wp:(i+1)*wp] for i in range(hp)]
-
-#Function for counting mines around node
-def mine_counter(x,y,g=outer_grid):
-	mines = 0
-	for i in range(y,y+3):
-		for j in range(x,x+3):
-			if g[i][j][0] == 'mine':
-				mines += 1
-	return mines
-# for i in inner_grid:
-# 	print(i)
-# print(mine_counter(1,1))
-# print(mine_counter(2,2))
-# print(mine_counter(3,3))
-# print(mine_counter(4,4))
-
-
-for i in range(hp):
-	for j in range(wp):
-		if inner_grid[i][j][0] != 'mine':
-			inner_grid[i][j][0] = mine_counter(i,j)
-for i in inner_grid:
-	print(i)
+def mine_counter(y,x,g=outer_grid): # function for counting mines around node
+    mines = 0
+    for i in range(y,y+3):
+        for j in range(x,x+3):
+            if outer_grid[i][j] == ['','NoFlag']:
+                mines += 1
+    return mines
+for u in range(hp):
+    for v in range(wp):
+        if inner_grid[u][v] != ['','NoFlag']:
+            inner_grid[u][v] = [mine_counter(u,v),'NoFlag']
 
 
 
