@@ -26,10 +26,42 @@ wp = 10 # width proportion
 hp = 10 # hight proportion
 rw = width/wp
 rh = hight/hp
+tm = 10 # total amount of mines
 screen = pygame.display.set_mode((width,hight+info_bar))
 screen.fill([74,117,44])
 pygame.display.set_caption("Minesweeper")
 clock = pygame.time.Clock()
+
+mine_placing_list = [['mine','NoFlag']]*tm+[[0,'NoFlag']]*(wp*hp-tm)
+random.shuffle(mine_placing_list)
+b = [(0,None)] # boundary
+outer_grid = [b*(wp+2)]+[b+mine_placing_list[i*wp:(i+1)*wp]+b for i in range(hp)]+[b*(wp+2)]
+inner_grid = [mine_placing_list[i*wp:(i+1)*wp] for i in range(hp)]
+
+#Function for counting mines around node
+def mine_counter(x,y,g=outer_grid):
+	mines = 0
+	for i in range(y,y+3):
+		for j in range(x,x+3):
+			if g[i][j][0] == 'mine':
+				mines += 1
+	return mines
+# for i in inner_grid:
+# 	print(i)
+# print(mine_counter(1,1))
+# print(mine_counter(2,2))
+# print(mine_counter(3,3))
+# print(mine_counter(4,4))
+
+
+for i in range(hp):
+	for j in range(wp):
+		if inner_grid[i][j][0] != 'mine':
+			inner_grid[i][j][0] = mine_counter(i,j)
+for i in inner_grid:
+	print(i)
+
+
 
 #Function for drawing chess pattern grid.
 def surface_griding(c1,c2,speed=0):
