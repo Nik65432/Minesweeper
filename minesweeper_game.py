@@ -26,10 +26,30 @@ wp = 10 # width proportion
 hp = 10 # hight proportion
 rw = width/wp
 rh = hight/hp
+tm = 10 # total amount of mines
 screen = pygame.display.set_mode((width,hight+info_bar))
 screen.fill([74,117,44])
 pygame.display.set_caption("Minesweeper")
 clock = pygame.time.Clock()
+
+#Building grid
+mine_placing_list = [['','NoFlag']]*tm+[0]*(wp*hp-tm)
+random.shuffle(mine_placing_list)
+outer_grid = [[0]*(wp+2)]+[[0]+mine_placing_list[i*wp:(i+1)*wp]+[0] for i in range(hp)]+[[0]*(wp+2)]
+inner_grid = [mine_placing_list[i*wp:(i+1)*wp] for i in range(hp)]
+def mine_counter(y,x,g=outer_grid): # function for counting mines around node
+    mines = 0
+    for i in range(y,y+3):
+        for j in range(x,x+3):
+            if outer_grid[i][j] == ['','NoFlag']:
+                mines += 1
+    return mines
+for u in range(hp):
+    for v in range(wp):
+        if inner_grid[u][v] != ['','NoFlag']:
+            inner_grid[u][v] = [mine_counter(u,v),'NoFlag']
+
+
 
 #Function for drawing chess pattern grid.
 def surface_griding(c1,c2,speed=0):
