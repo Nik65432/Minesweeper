@@ -33,6 +33,7 @@ pygame.display.set_caption("Minesweeper")
 clock = pygame.time.Clock()
 
 #Building grid
+game_over = False
 mines_list,not_mines_list = [],[]
 for i in range(tm):
     mines_list.append(['mine','NoFlag','close'])
@@ -40,9 +41,9 @@ for i in range(wp*hp-tm):
     not_mines_list.append([0,'NoFlag','close'])
 mine_placing_list = mines_list+not_mines_list
 random.shuffle(mine_placing_list)
-b = [0,'NoFlag','close'] # border 
+b = ['=','NoFlag','close'] # border 
 outer_grid = [[b]*(wp+2)]+[[b]+mine_placing_list[i*wp:(i+1)*wp]+[b] for i in range(hp)]+[[b]*(wp+2)]
-grid = [mine_placing_list[i*wp:(i+1)*wp] for i in range(hp)]
+inner_grid = [mine_placing_list[i*wp:(i+1)*wp] for i in range(hp)]
 def mine_counter(x,y,g=outer_grid): # function for counting mines around node
     mines = 0
     for i in range(y,y+3):
@@ -52,8 +53,8 @@ def mine_counter(x,y,g=outer_grid): # function for counting mines around node
     return mines
 for u in range(hp):
     for v in range(wp):
-        if grid[u][v][0] != 'mine':
-            grid[u][v][0] = mine_counter(v,u)
+        if inner_grid[u][v][0] != 'mine':
+            inner_grid[u][v][0] = mine_counter(v,u)
 
 #Function for drawing chess pattern grid.
 def surface_griding(c1,c2,speed=0):
@@ -63,8 +64,6 @@ def surface_griding(c1,c2,speed=0):
 				time.sleep(speed)
 				pygame.display.update()
 			pygame.draw.rect(screen,[c1,c2][int((x+y)%2==0)],pygame.Rect(x*rw,y*rh+info_bar,rw,rh))
-# surface_griding(light_back_colour,dark_back_colour)
-surface_griding(light_front_colour,dark_front_colour)
 
 #Flags
 light_flag = pygame.image.load("C:\\Users\\User\\Desktop\\repo\\minesweeper\\light_flag.png")
@@ -77,7 +76,7 @@ def render_flag(x,y):
 		screen.blit(dark_flag,(x*rw,y*rh+info_bar))
 	else:
 		screen.blit(light_flag,(x*rw,y*rh+info_bar))
-render_flag(0,2)
+	inner_grid[y][x][1] = 'Flag'
 
 #Function for rendering square
 def render_square(x,y,c1,c2):
@@ -89,7 +88,7 @@ def render_number(x,y,number):
 	num = number_font.render(str(number),True,number_colours[number-1])
 	render_square(x,y,light_back_colour,dark_back_colour)
 	screen.blit(num,num.get_rect(center=((2*x+1)*rw/2,info_bar+(2*y+1)*rh/2)))
-render_number(0,0,1)
+	inner_grid[y][x][2] = 'open'
 
 #Function for rendering mine
 def render_mine(x,y):
@@ -97,35 +96,36 @@ def render_mine(x,y):
 	mine_circle_colour = [i/2 for i in mine_rect_colour]
 	pygame.draw.rect(screen,mine_rect_colour,pygame.Rect(x*rw,y*rh+info_bar,rw,rh))
 	pygame.draw.circle(screen,mine_circle_colour,((2*x+1)*rw/2,info_bar+(2*y+1)*rh/2),int(rw/4))
-render_mine(0,1)
+	inner_grid[y][x][2] = 'open'
 
 #Function for opening one square
 def opender(x,y):
-	if grid[y][x][0] == 'mine':
+	if inner_grid[y][x][0] == 'mine':
 		render_mine(x,y)
-	elif grid[y][x][0] == 0:
+	elif inner_grid[y][x][0] == 0:
+		inner_grid[y][x][2] = 'open'
 		render_square(x,y,light_back_colour,dark_back_colour)
 	else:
-		render_number(x,y,grid[y][x][0])
-# def chain_reaction(x,y):
-# 	for u in range(y,y+3):
-# 		for v in range(x,x+3):
-# 			if outer_grid[u][v][0] != 0 and u!=y and v!=x and outer_grid[u][v][2] == 'close':
-# 				opender(v,u)
-# 				outer_grid[u][v][2] = 'open'
-# 			elif outer_grid[u][v] == 0 and outer_grid[u][v][2] == 'close':
-# 				outer_grid[u][v] = 'open'
-# 				render_square(v,u,light_back_colour,dark_back_colour)
-# 				chain_reaction(v,u)
+		render_number(x,y,inner_grid[y][x][0])
+def chain_reaction(x,y): # chain reaction for opening empty square
+	for u in range(y,y+3):
+		for v in range(x,x+3):
+			if outer_grid[u][v][0] != 0 and outer_grid[u][v][2] == 'close' and outer_grid[u][v][0] != '=':
+				opender(v-1,u-1)
+			elif outer_grid[u][v][0] == 0 and outer_grid[u][v][2] == 'close':
+				outer_grid[u][v][2] = 'open'
+				render_square(v-1,u-1,light_back_colour,dark_back_colour)
+				chain_reaction(v-1,u-1)
 
+#Function for mine explosion
+def reveler():
+	for u in range(hp):
+		for v in range(wp):
+			opender(v,u)
+			game_over = True
 
-
-# info_bar_font = pygame.font.Font(None,info_bar)
-# def timer_function():
-# 	pygame.draw.rect(screen,[74,117,44],pygame.Rect(0,0,width,info_bar))
-# 	seconds = int(pygame.time.get_ticks()/1000)
-# 	timer = info_bar_font.render(str(seconds),True,(10,10,10))
-# 	screen.blit(timer,(0,0))
+surface_griding(light_front_colour,dark_front_colour)
+#Main loop
 while True:
 	for event in pygame.event.get():
 		if event.type == pygame.QUIT:
@@ -136,18 +136,23 @@ while True:
 			y = int((pygame.mouse.get_pos()[1]-info_bar)//rh)
 			print(x,y)
 			if event.button == 1 and y>=0:
-					if grid[y][x][1] == 'NoFlag':
-						opender(x,y)
-					elif grid[y][x][1] == 'Flag':
+					if inner_grid[y][x][1] == 'NoFlag':
+						if inner_grid[y][x][0] == 'mine':
+							reveler()
+						elif inner_grid[y][x][0] == 0:
+							chain_reaction(x,y)
+						else:
+							opender(x,y)
+					elif inner_grid[y][x][1] == 'Flag':
 						render_square(x,y,light_front_colour,dark_front_colour)
-						grid[y][x][1] = 'NoFlag'
+						inner_grid[y][x][1] = 'NoFlag'
 			elif event.button == 3 and y>=0:
-				if grid[y][x][1] == 'Flag':
+				if inner_grid[y][x][1] == 'Flag':
 					render_square(x,y,light_front_colour,dark_front_colour)
-					grid[y][x][1] = 'NoFlag'
-				elif grid[y][x][1] == 'NoFlag':
+					inner_grid[y][x][1] = 'NoFlag'
+				elif inner_grid[y][x][1] == 'NoFlag'and inner_grid[y][x][2] == 'close':
 					render_flag(x,y)
-					grid[y][x][1] = 'Flag'
+					inner_grid[y][x][1] = 'Flag'
 
 	pygame.display.update()
 	clock.tick(60)
