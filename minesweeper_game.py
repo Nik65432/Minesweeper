@@ -1,6 +1,7 @@
 import pygame
 import random
 import time
+import sys
 #Colours
 light_back_colour = [229,194,159]
 dark_back_colour = [215,184,153]
@@ -205,7 +206,7 @@ level_init()
 while True:
 	for event in pygame.event.get():
 		if event.type == pygame.QUIT:
-			exit()
+			sys.exit()
 		if game_over_checker() == tm or click == 2:
 			start_game()
 			flag_count_update(tm)
